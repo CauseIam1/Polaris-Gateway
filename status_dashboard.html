@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polaris System Status</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+            --accent-yellow: #f59e0b;
+            --border-color: #475569;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        h1 { font-size: 2rem; font-weight: 700; }
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 8px 16px; border-radius: 9999px;
+            font-weight: 600; font-size: 0.875rem;
+        }
+        .status-badge.idle { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+        .status-badge.busy { background: rgba(245, 158, 11, 0.2); color: var(--accent-yellow); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; animation: pulse 2s infinite; }
+        .status-dot.idle { background: var(--accent-green); }
+        .status-dot.busy { background: var(--accent-yellow); }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px; margin-bottom: 30px;
+        }
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 20px;
+        }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .card-title { font-size: 1.125rem; font-weight: 600; color: var(--text-secondary); }
+        .card-value { font-size: 2.5rem; font-weight: 700; }
+        .task-list { display: flex; flex-direction: column; gap: 12px; }
+        .task-item {
+            background: var(--bg-card); border-radius: 8px; padding: 15px;
+            border-left: 4px solid var(--accent-blue);
+        }
+        .task-item.pending { border-left-color: var(--accent-yellow); }
+        .task-item.running { border-left-color: var(--accent-blue); }
+        .task-item.completed { border-left-color: var(--accent-green); }
+        .task-item.failed { border-left-color: var(--accent-red); }
+        .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .task-type { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); font-weight: 600; }
+        .task-status { font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase; }
+        .task-status.pending { background: rgba(245, 158, 11, 0.2); color: var(--accent-yellow); }
+        .task-status.running { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
+        .task-status.completed { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+        .task-status.failed { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
+        .task-description { font-size: 0.875rem; color: var(--text-primary); margin-bottom: 8px; }
+        .task-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-secondary); }
+        .progress-bar { height: 4px; background: var(--bg-secondary); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--accent-blue); transition: width 0.3s ease; }
+        .refresh-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.875rem; }
+        .refresh-btn:hover { background: var(--border-color); }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
+        .last-updated { font-size: 0.75rem; color: var(--text-secondary); margin-top: 20px; text-align: right; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧠 Polaris System Status</h1>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <button class="refresh-btn" onclick="fetchStatus()">↻ Refresh</button>
+                <div id="systemStatus" class="status-badge idle">
+                    <span class="status-dot idle"></span>
+                    <span id="statusText">IDLE</span>
+                </div>
+            </div>
+        </header>
+        <div class="grid">
+            <div class="card"><div class="card-header"><span class="card-title">Active Tasks</span></div><div class="card-value" id="activeCount">0</div></div>
+            <div class="card"><div class="card-header"><span class="card-title">Completed (Recent)</span></div><div class="card-value" id="completedCount">0</div></div>
+            <div class="card"><div class="card-header"><span class="card-title">Total Processed</span></div><div class="card-value" id="totalCount">0</div></div>
+        </div>
+        <div class="card">
+            <div class="card-header"><span class="card-title">Active Tasks</span></div>
+            <div id="activeTasksList" class="task-list"><div class="empty-state">No active tasks</div></div>
+        </div>
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-header"><span class="card-title">Recently Completed</span></div>
+            <div id="completedTasksList" class="task-list"><div class="empty-state">No recent tasks</div></div>
+        </div>
+        <div class="last-updated">Last updated: <span id="lastUpdated">Never</span></div>
+    </div>
+    <script>
+        const API_BASE = window.location.origin;
+        function formatTimestamp(isoString) { return new Date(isoString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
+        function formatDuration(seconds) {
+            if (seconds < 60) return Math.round(seconds) + 's';
+            if (seconds < 3600) return Math.round(seconds / 60) + 'm ' + Math.round(seconds % 60) + 's';
+            return Math.round(seconds / 3600) + 'h ' + Math.round((seconds % 3600) / 60) + 'm';
+        }
+        function createTaskCard(task) {
+            const duration = (new Date(task.updated_at) - new Date(task.created_at)) / 1000;
+            return '<div class="task-item ' + task.status + '"><div class="task-header"><span class="task-type">' + task.task_type.replace(/_/g, ' ') + '</span><span class="task-status ' + task.status + '">' + task.status + '</span></div><div class="task-description">' + task.description + '</div><div class="task-meta"><span>ID: ' + task.task_id + '</span><span>Duration: ' + formatDuration(duration) + '</span></div>' + (task.progress > 0 ? '<div class="progress-bar"><div class="progress-fill" style="width: ' + task.progress + '%"></div></div>' : '') + (task.error ? '<div style="margin-top: 8px; font-size: 0.75rem; color: var(--accent-red);">' + task.error + '</div>' : '') + '</div>';
+        }
+        async function fetchStatus() {
+            try {
+                const [statusResponse, tasksResponse] = await Promise.all([fetch(API_BASE + '/api/status'), fetch(API_BASE + '/api/status/tasks?limit=10')]);
+                const status = await statusResponse.json();
+                const tasksData = await tasksResponse.json();
+                const statusBadge = document.getElementById('systemStatus');
+                const statusText = document.getElementById('statusText');
+                const statusDot = statusBadge.querySelector('.status-dot');
+                if (status.system_busy) { statusBadge.className = 'status-badge busy'; statusDot.className = 'status-dot busy'; statusText.textContent = 'BUSY'; }
+                else { statusBadge.className = 'status-badge idle'; statusDot.className = 'status-dot idle'; statusText.textContent = 'IDLE'; }
+                document.getElementById('activeCount').textContent = status.active_tasks_count;
+                document.getElementById('completedCount').textContent = status.completed_tasks_count;
+                document.getElementById('totalCount').textContent = status.total_tasks_processed;
+                const activeTasksList = document.getElementById('activeTasksList');
+                if (status.active_tasks && status.active_tasks.length > 0) { activeTasksList.innerHTML = status.active_tasks.map(createTaskCard).join(''); }
+                else { activeTasksList.innerHTML = '<div class="empty-state">No active tasks</div>'; }
+                const completedTasksList = document.getElementById('completedTasksList');
+                if (tasksData.tasks && tasksData.tasks.length > 0) { completedTasksList.innerHTML = tasksData.tasks.filter(t => t.status === 'completed' || t.status === 'failed').map(createTaskCard).join(''); }
+                else { completedTasksList.innerHTML = '<div class="empty-state">No recent tasks</div>'; }
+                document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+            } catch (error) { console.error('Error fetching status:', error); document.getElementById('lastUpdated').textContent = 'Error fetching data'; }
+        }
+        fetchStatus();
+        setInterval(fetchStatus, 5000);
+    </script>
+</body>
+</html>
