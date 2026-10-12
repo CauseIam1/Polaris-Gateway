@@ -3,6 +3,7 @@
 ## Single source of truth for the Polaris AI stack as it currently sits: containers, services, APIs, subsystems, and deployment facts. Scope: `freeroam/polaris-gateway` (gateway) and `freeroam/polaris-dashboard` (dashboard). 
 ---
 
+
 ## 1. Overview
 
 ### Polaris is the private AI assistant and system hub running on the Dell Mainframe host (`192.168.50.51`, LAN-only). Two primary Docker containers plus supporting infrastructure:
